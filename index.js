@@ -1,5 +1,7 @@
 const { Client, GatewayIntentBits } = require('discord.js');
+const axios = require('axios');
 require('dotenv').config();
+
 
 const client = new Client({
   intents: [
@@ -22,6 +24,11 @@ client.on('messageCreate', async (message) => {
     console.log(`🛬 ${message.author.username} has ARRIVED at job`);
     try {
       await message.channel.send(`✅ Got it, ${message.author.username} — you're checked in! 🚗`);
+       await axios.post('https://grimeguardians.app.n8n.cloud/webhook/discord-checkin', {
+        username: message.author.username,
+        message: message.content,
+        timestamp: new Date().toISOString()
+      });
     } catch (err) {
       console.error('❌ Failed to send ARRIVED message:', err);
     }
@@ -32,6 +39,11 @@ client.on('messageCreate', async (message) => {
     console.log(`✅ ${message.author.username} has FINISHED the job`);
     try {
       await message.channel.send(`🎉 Great work, ${message.author.username}! Job marked as finished.`);
+      await axios.post('https://grimeguardians.app.n8n.cloud/webhook/discord-checkin', {
+        username: message.author.username,
+        message: message.content,
+        timestamp: new Date().toISOString()
+      });
     } catch (err) {
       console.error('❌ Failed to send FINISHED message:', err);
     }
