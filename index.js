@@ -9,8 +9,8 @@ const client = new Client({
   ],
 });
 
-// n8n webhook URL - UPDATE THIS with your actual webhook path
-const N8N_WEBHOOK_URL = 'https://grimeguardians.app.n8n.cloud/webhook-test/job-status-updates';
+// Fixed webhook URL
+const N8N_WEBHOOK_URL = 'https://grimeguardians.app.n8n.cloud/webhook/job-status-updates';
 
 client.once('ready', () => {
   console.log(`✅ Ava is online as ${client.user.tag}`);
@@ -22,27 +22,46 @@ client.on('messageCreate', async (message) => {
   const content = message.content;
   const channelName = message.channel.name;
   
+  console.log(`📝 Message received in #${channelName}: "${content}"`); // Debug log
+  
   // Only process messages in job-check-ins channel
   if (channelName !== 'job-check-ins') return;
   
-  // Helper function to send data to n8n
+  console.log(`✅ Processing message in job-check-ins channel`); // Debug log
+  
+  // Helper function to send data to n8n (using https module instead of fetch)
   async function sendToN8N(messageData) {
     try {
-      const response = await fetch(N8N_WEBHOOK_URL, {
+      const https = require('https');
+      const url = require('url');
+      
+      const parsedUrl = url.parse(N8N_WEBHOOK_URL);
+      const postData = JSON.stringify(messageData);
+      
+      const options = {
+        hostname: parsedUrl.hostname,
+        port: 443,
+        path: parsedUrl.path,
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(messageData)
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
+        }
+      };
+      
+      const req = https.request(options, (res) => {
+        console.log(`✅ n8n responded with status: ${res.statusCode}`);
       });
       
-      if (response.ok) {
-        console.log('✅ Data sent to n8n successfully');
-      } else {
-        console.error('❌ Failed to send to n8n:', response.status);
-      }
+      req.on('error', (error) => {
+        console.error('❌ Error sending to n8n:', error);
+      });
+      
+      req.write(postData);
+      req.end();
+      
     } catch (error) {
-      console.error('❌ Error sending to n8n:', error);
+      console.error('❌ Error in sendToN8N:', error);
     }
   }
   
@@ -87,6 +106,11 @@ client.on('messageCreate', async (message) => {
       console.error('❌ Failed to send FINISHED message:', err);
     }
   }
+});
+
+// Add error handling
+client.on('error', (error) => {
+  console.error('❌ Discord client error:', error);
 });
 
 client.login(process.env.DISCORD_BOT_TOKEN);
