@@ -24,7 +24,7 @@ client.on('messageCreate', async (message) => {
     console.log(`🛬 ${message.author.username} has ARRIVED at job`);
     try {
       await message.channel.send(`✅ Got it, ${message.author.username} — you're checked in! 🚗`);
-       await axios.post('https://grimeguardians.app.n8n.cloud/webhook/discord-checkin', {
+       await axios.post('https://grimeguardians.app.n8n.cloud/webhook-test/discord-checkin', {
         username: message.author.username,
         message: message.content,
         timestamp: new Date().toISOString()
