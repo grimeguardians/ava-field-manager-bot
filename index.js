@@ -2,7 +2,6 @@ const { Client, GatewayIntentBits } = require('discord.js');
 const axios = require('axios');
 require('dotenv').config();
 
-
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -19,35 +18,54 @@ client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
   const content = message.content.toLowerCase();
+  const timestamp = new Date().toISOString(); // ✅ Use one consistent timestamp
 
   if (content.includes('🚗')) {
     console.log(`🛬 ${message.author.username} has ARRIVED at job`);
+
     try {
       await message.channel.send(`✅ Got it, ${message.author.username} — you're checked in! 🚗`);
-       await axios.post('https://grimeguardians.app.n8n.cloud/webhook/discord-checkin', {
+
+      // ✅ NEW: Log payload being sent to n8n for visibility
+      const payload = {
         username: message.author.username,
         message: message.content,
-        timestamp: new Date().toISOString()
-      });
+        timestamp: timestamp
+      };
+      console.log('📡 Sending ARRIVED check-in to n8n:', payload);
+
+      await axios.post('https://grimeguardians.app.n8n.cloud/webhook/discord-checkin', payload);
     } catch (err) {
-      console.error('❌ Failed to send ARRIVED message:', err);
+      // ✅ NEW: Detailed error logging
+      console.error('❌ Failed to send ARRIVED webhook to n8n:', err.message);
+      if (err.response) {
+        console.error('🔎 Response data:', err.response.data);
+      }
     }
-    // TODO: Send to n8n webhook
   }
 
   if (content.includes('🏁')) {
     console.log(`✅ ${message.author.username} has FINISHED the job`);
+
     try {
       await message.channel.send(`🎉 Great work, ${message.author.username}! Job marked as finished.`);
-      await axios.post('https://grimeguardians.app.n8n.cloud/webhook/discord-checkin', {
+
+      // ✅ NEW: Log payload being sent to n8n for visibility
+      const payload = {
         username: message.author.username,
         message: message.content,
-        timestamp: new Date().toISOString()
-      });
+        timestamp: timestamp
+      };
+      console.log('📡 Sending FINISHED check-in to n8n:', payload);
+
+      await axios.post('https://grimeguardians.app.n8n.cloud/webhook/discord-checkin', payload);
     } catch (err) {
-      console.error('❌ Failed to send FINISHED message:', err);
+      // ✅ NEW: Detailed error logging
+      console.error('❌ Failed to send FINISHED webhook to n8n:', err.message);
+      if (err.response) {
+        console.error('🔎 Response data:', err.response.data);
+      }
     }
-    // TODO: Send to n8n webhook
   }
 });
 
