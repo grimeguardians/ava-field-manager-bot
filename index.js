@@ -10,7 +10,7 @@ const client = new Client({
 });
 
 // n8n webhook URL - UPDATE THIS with your actual webhook path
-const N8N_WEBHOOK_URL = 'https://grimeguardians.app.n8n.cloud/webhook/job-status-updates';
+const N8N_WEBHOOK_URL = 'https://grimeguardians.app.n8n.cloud/webhook-test/job-status-updates';
 
 client.once('ready', () => {
   console.log(`✅ Ava is online as ${client.user.tag}`);
