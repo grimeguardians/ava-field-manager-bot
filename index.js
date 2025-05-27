@@ -20,13 +20,15 @@ client.on('messageCreate', async (message) => {
   const content = message.content.toLowerCase();
   const timestamp = new Date().toISOString(); // ✅ Use one consistent timestamp
 
-  if (content.includes('🚗')) {
+  const arrivalTriggers = ['🚗', 'arrived', "i've arrived", 'here', "i'm here"];
+  const hasArrivalTrigger = arrivalTriggers.some(trigger => content.includes(trigger));
+  
+  if (hasArrivalTrigger) {
     console.log(`🛬 ${message.author.username} has ARRIVED at job`);
 
     try {
       await message.channel.send(`✅ Got it, ${message.author.username} — you're checked in! 🚗`);
 
-      // ✅ NEW: Log payload being sent to n8n for visibility
       const payload = {
         username: message.author.username,
         message: message.content + ' 🚗',
@@ -37,7 +39,7 @@ client.on('messageCreate', async (message) => {
 
       await axios.post('https://grimeguardians.app.n8n.cloud/webhook/discord-checkin', payload);
     } catch (err) {
-      // ✅ NEW: Detailed error logging
+
       console.error('❌ Failed to send ARRIVED webhook to n8n:', err.message);
       if (err.response) {
         console.error('🔎 Response data:', err.response.data);
@@ -45,13 +47,15 @@ client.on('messageCreate', async (message) => {
     }
   }
 
-  if (content.includes('🏁')) {
+  const finishedTriggers = ['🏁', 'finished', "i'm finished", 'done', 'all done'];
+  const hasFinishedTrigger = finishedTriggers.some(trigger => content.includes(trigger));
+  
+  if (hasFinishedTrigger) {
     console.log(`✅ ${message.author.username} has FINISHED the job`);
 
     try {
       await message.channel.send(`🎉 Great work, ${message.author.username}! Job marked as finished.`);
 
-      // ✅ NEW: Log payload being sent to n8n for visibility
       const payload = {
         username: message.author.username,
         message: message.content + ' 🏁',
@@ -62,7 +66,7 @@ client.on('messageCreate', async (message) => {
 
       await axios.post('https://grimeguardians.app.n8n.cloud/webhook/discord-checkin', payload);
     } catch (err) {
-      // ✅ NEW: Detailed error logging
+
       console.error('❌ Failed to send FINISHED webhook to n8n:', err.message);
       if (err.response) {
         console.error('🔎 Response data:', err.response.data);
