@@ -29,8 +29,9 @@ client.on('messageCreate', async (message) => {
       // ✅ NEW: Log payload being sent to n8n for visibility
       const payload = {
         username: message.author.username,
-        message: message.content,
-        timestamp: timestamp
+        message: message.content + ' 🚗',
+        timestamp: timestamp,
+        action: 'arrived'
       };
       console.log('📡 Sending ARRIVED check-in to n8n:', payload);
 
@@ -53,8 +54,9 @@ client.on('messageCreate', async (message) => {
       // ✅ NEW: Log payload being sent to n8n for visibility
       const payload = {
         username: message.author.username,
-        message: message.content,
-        timestamp: timestamp
+        message: message.content + ' 🏁',
+        timestamp: timestamp,
+        action: 'finished'
       };
       console.log('📡 Sending FINISHED check-in to n8n:', payload);
 
