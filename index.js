@@ -35,7 +35,7 @@ client.on('messageCreate', async (message) => {
       };
       console.log('📡 Sending ARRIVED check-in to n8n:', payload);
 
-      await axios.post('https://grimeguardians.app.n8n.cloud/webhook/discord-checkin', payload);
+      await axios.post('https://grimeguardians.app.n8n.cloud/webhook-test/discord-checkin', payload);
     } catch (err) {
       // ✅ NEW: Detailed error logging
       console.error('❌ Failed to send ARRIVED webhook to n8n:', err.message);
@@ -60,7 +60,7 @@ client.on('messageCreate', async (message) => {
       };
       console.log('📡 Sending FINISHED check-in to n8n:', payload);
 
-      await axios.post('https://grimeguardians.app.n8n.cloud/webhook/discord-checkin', payload);
+      await axios.post('https://grimeguardians.app.n8n.cloud/webhook-test/discord-checkin', payload);
     } catch (err) {
       // ✅ NEW: Detailed error logging
       console.error('❌ Failed to send FINISHED webhook to n8n:', err.message);
