@@ -2,8 +2,6 @@ const { Client, GatewayIntentBits } = require('discord.js');
 const axios = require('axios');
 require('dotenv').config();
 
-const jobMap = {};
-
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -11,6 +9,24 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
   ],
 });
+
+// — START ADD: in-memory store for the latest jobId per user
+const jobMap = new Map();
+// helper to build the exact same ID format you use in n8n
+function generateJobId(username, isoTimestamp) {
+  const d = new Date(isoTimestamp);
+  const datePart = d.toLocaleDateString('en-US', {
+    timeZone: 'America/Chicago',
+    year:   'numeric',
+    month:  '2-digit',
+    day:    '2-digit',
+  }).replace(/\//g, '');
+  const randomNum = Math.floor(Math.random() * 1000)
+                      .toString()
+                      .padStart(3, '0');
+  return `${username}-${datePart}-${randomNum}`;
+}
+// — END ADD
 
 client.once('ready', () => {
   console.log(`✅ Ava is online as ${client.user.tag}`);
@@ -32,77 +48,71 @@ client.on('messageCreate', async (message) => {
     }).replace(/\//g, '');
   }
   // — END ADD
+  
 
   const arrivalTriggers = ['🚗', 'arrived', "i've arrived", 'here', "i'm here", "starting"];
-  const hasArrivalTrigger = arrivalTriggers.some(trigger => content.includes(trigger));
-  
-  if (hasArrivalTrigger) {
-    console.log(`🛬 ${message.author.username} has ARRIVED at job`);
+const hasArrivalTrigger = arrivalTriggers.some(trigger => content.includes(trigger));
 
-    try {
-      await message.channel.send(`✅ Got it, ${message.author.username} — you're checked in! 🚗`);
+if (hasArrivalTrigger) {
+  console.log(`🛬 ${message.author.username} has ARRIVED at job`);
 
-       // — START ADD: generate and store jobId on arrival
-      const jobNumber = Math.floor(Math.random() * 1000)
-                          .toString()
-                          .padStart(3, '0');
-      const jobId     = `${message.author.username}-${getCstDateOnly()}-${jobNumber}`;
-      jobMap[message.author.username] = jobId;
-      // — END ADD
+  try {
+    await message.channel.send(`✅ Got it, ${message.author.username} — you're checked in! 🚗`);
 
-      const payload = {
-        //username: message.author.username,
-        //message: message.content + ' 🚗',
-        //timestamp: timestamp,
-        //action: 'arrived'
-        username: message.author.username,
-        message:  message.content + ' 🚗',
-        timestamp,
-        action:   'arrived',
-        jobId,   // ✅ include jobId in the webhook
-      };
-      console.log('📡 Sending ARRIVED check-in to n8n:', payload);
-      await axios.post('https://grimeguardians.app.n8n.cloud/webhook-test/discord-checkin', payload);
-    } catch (err) {
+    // — START ADD: generate and store jobId on arrival
+    const jobNumber = Math.floor(Math.random() * 1000)
+                        .toString()
+                        .padStart(3, '0');
+    const jobId     = `${message.author.username}-${getCstDateOnly()}-${jobNumber}`;
+    jobMap[message.author.username] = jobId;
+    // — END ADD
 
-      console.error('❌ Failed to send ARRIVED webhook to n8n:', err.message);
-      if (err.response) {
-        console.error('🔎 Response data:', err.response.data);
-      }
+    const payload = {
+      username: message.author.username,
+      message:  message.content + ' 🚗',
+      timestamp,
+      action:   'arrived',
+      jobId,    // ✅ include jobId in the webhook
+    };
+    console.log('📡 Sending ARRIVED check-in to n8n:', payload);
+    await axios.post('https://grimeguardians.app.n8n.cloud/webhook-test/discord-checkin', payload);
+  } catch (err) {
+    console.error('❌ Failed to send ARRIVED webhook to n8n:', err.message);
+    if (err.response) {
+      console.error('🔎 Response data:', err.response.data);
     }
   }
+}
 
-  const finishedTriggers = ['🏁', 'finished', "i'm finished", 'done', 'all done'];
-  const hasFinishedTrigger = finishedTriggers.some(trigger => content.includes(trigger));
-  
-  if (hasFinishedTrigger) {
-    console.log(`✅ ${message.author.username} has FINISHED the job`);
 
-    try {
-      await message.channel.send(`🎉 Great work, ${message.author.username}! Job marked as finished.`);
+const finishedTriggers = ['🏁', 'finished', "i'm finished", 'done', 'all done'];
+const hasFinishedTrigger = finishedTriggers.some(trigger => content.includes(trigger));
 
-      // Newly added
-      const jobId = jobMap[message.author.username] || null;
-      // Finished addition
-      
-      const payload = {
-        username: message.author.username,
-        message:  message.content + ' 🏁',
-        timestamp,
-        action:   'finished',
-        jobId,   // ✅ carry jobId through so n8n can match the row
-      };
-      console.log('📡 Sending FINISHED check-in to n8n:', payload);
+if (hasFinishedTrigger) {
+  console.log(`✅ ${message.author.username} has FINISHED the job`);
 
-      await axios.post('https://grimeguardians.app.n8n.cloud/webhook-test/discord-checkin', payload);
-    } catch (err) {
+  try {
+    await message.channel.send(`🎉 Great work, ${message.author.username}! Job marked as finished.`);
 
-      console.error('❌ Failed to send FINISHED webhook to n8n:', err.message);
-      if (err.response) {
-        console.error('🔎 Response data:', err.response.data);
-      }
+    // — START ADD: retrieve the same jobId on finish
+    const jobId = jobMap[message.author.username] || null;
+    // — END ADD
+
+    const payload = {
+      username: message.author.username,
+      message:  message.content + ' 🏁',
+      timestamp,
+      action:   'finished',
+      jobId,    // ✅ carry jobId through so n8n can match the row
+    };
+    console.log('📡 Sending FINISHED check-in to n8n:', payload);
+    await axios.post('https://grimeguardians.app.n8n.cloud/webhook-test/discord-checkin', payload);
+  } catch (err) {
+    console.error('❌ Failed to send FINISHED webhook to n8n:', err.message);
+    if (err.response) {
+      console.error('🔎 Response data:', err.response.data);
     }
   }
-});
+}
 
 client.login(process.env.DISCORD_BOT_TOKEN);
