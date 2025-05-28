@@ -20,7 +20,7 @@ client.on('messageCreate', async (message) => {
   const content = message.content.toLowerCase();
   const timestamp = new Date().toISOString(); // ✅ Use one consistent timestamp
 
-  const arrivalTriggers = ['🚗', 'arrived', "i've arrived", 'here', "i'm here"];
+  const arrivalTriggers = ['🚗', 'arrived', "i've arrived", 'here', "i'm here", "starting"];
   const hasArrivalTrigger = arrivalTriggers.some(trigger => content.includes(trigger));
   
   if (hasArrivalTrigger) {
